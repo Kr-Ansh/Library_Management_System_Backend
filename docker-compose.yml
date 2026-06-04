@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # --- 1. THE DATABASE SERVICE ---
+  mysqldb:
+    image: mysql:8.0
+    container_name: library-mysql-container
+    environment:
+      MYSQL_DATABASE: libraryDb
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - library-network
+
+  # --- 2. YOUR SPRING BOOT APPLICATION ---
+  library-app:
+    build: .
+    container_name: library-backend-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysqldb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/libraryDb?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    networks:
+      - library-network
+
+# --- 3. PERSISTENT STORAGE AND ISOLATED NETWORK LOGIC ---
+volumes:
+  mysql_data:
+
+networks:
+  library-network:
+    driver: bridge
