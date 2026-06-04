@@ -9,9 +9,13 @@ import com.irons.library_management_system_backend.mapper.BookMapper;
 import com.irons.library_management_system_backend.mapper.UserMapper;
 import com.irons.library_management_system_backend.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersService {
@@ -25,6 +29,7 @@ public class UsersService {
     @Autowired
     private BookMapper bookMapper;
 
+    @Cacheable(value = "allUsersCache")
     public List<UserResponseDTO> findAllUsers() {
 
         List<Users> users = usersRepository.findAll();
@@ -33,9 +38,10 @@ public class UsersService {
 
         return users.stream()
                 .map(userMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "userDetailsByIdCache", key = "#userId")
     public UserResponseDTO findUserById(Long userId) {
 
         Users user = usersRepository.findById(userId)
@@ -44,6 +50,7 @@ public class UsersService {
         return userMapper.toResponseDTO(user);
     }
 
+    @Cacheable(value = "userDetailsByNameCache", key = "#userName")
     public UserResponseDTO findUserByName(String userName) {
 
         Users user = usersRepository.findByUserName(userName);
@@ -54,6 +61,11 @@ public class UsersService {
     }
 
 
+
+    @Caching(evict = {
+            @CacheEvict(value = "allUsersCache", allEntries = true),
+            @CacheEvict(value = "usersByRoleCache", allEntries = true) // 👈 FIXED: Maintain role filter accuracy
+    })
     public void addUser(UserRequestDTO userRequestDTO) {
 
         Users user = new Users();
@@ -63,6 +75,13 @@ public class UsersService {
         usersRepository.save(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "allUsersCache", allEntries = true),
+            @CacheEvict(value = "usersByRoleCache", allEntries = true),
+            @CacheEvict(value = "userDetailsByNameCache", allEntries = true),
+            @CacheEvict(value = "booksBorrowedByUserCache", key = "#userId"), // 👈 FIXED: Clear dangling relationships
+            @CacheEvict(value = "userDetailsByIdCache", key = "#userId")
+    })
     public void removeUser(Long userId) {
 
         Users user = usersRepository.findById(userId)
@@ -71,6 +90,12 @@ public class UsersService {
         usersRepository.delete(user);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "allUsersCache",  allEntries = true),
+            @CacheEvict(value = "usersByRoleCache", allEntries = true),
+            @CacheEvict(value = "userDetailsByNameCache", allEntries = true),
+            @CacheEvict(value = "userDetailsByIdCache", key = "#userId")
+    })
     public void makeUserAdmin(Long userId) {
 
         Users user = usersRepository.findById(userId)
@@ -80,6 +105,7 @@ public class UsersService {
         usersRepository.save(user);
     }
 
+    @Cacheable(value = "usersByRoleCache", key = "#isAdmin")
     public List<UserResponseDTO> findAllUsersByRole(Boolean isAdmin) {
 
         if(isAdmin == null) throw new LibraryException("Role cannot be null.");
@@ -90,9 +116,10 @@ public class UsersService {
 
         return users.stream()
                 .map(userMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "booksBorrowedByUserCache", key = "#userId")
     public List<BookResponseDTO> findAllBooksBorrowedByUser(Long userId) {
 
         Users user = usersRepository.findById(userId)
@@ -100,6 +127,6 @@ public class UsersService {
         
         return user.getBooksBorrowed().stream()
                 .map(bookMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 }

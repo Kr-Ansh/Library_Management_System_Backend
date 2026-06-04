@@ -15,6 +15,14 @@ services:
     networks:
       - library-network
 
+  redis:
+    image: redis:7.0-alpine
+    container_name: library-redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - library-network
+
   # --- 2. YOUR SPRING BOOT APPLICATION ---
   library-app:
     build: .
@@ -23,10 +31,13 @@ services:
       - "8080:8080"
     depends_on:
       - mysqldb
+      - redis
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/libraryDb?useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
     networks:
       - library-network
 
