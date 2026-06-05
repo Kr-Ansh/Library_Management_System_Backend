@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # --- 1. THE DATABASE SERVICE ---
+  # --- THE DATABASE SERVICE ---
   mysqldb:
     image: mysql:8.0
     container_name: library-mysql-container
@@ -15,6 +15,7 @@ services:
     networks:
       - library-network
 
+  # --- THE REDIS CACHE SERVICE ---
   redis:
     image: redis:7.0-alpine
     container_name: library-redis-cache
@@ -23,7 +24,34 @@ services:
     networks:
       - library-network
 
-  # --- 2. YOUR SPRING BOOT APPLICATION ---
+  # --- THE KAFKA COORDINATOR (ZOOKEEPER) ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: library-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - library-network
+
+  # --- 4. THE KAFKA BROKER ENGINE ---
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: library-kafka-broker
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - library-network
+
+  # --- YOUR SPRING BOOT APPLICATION ---
   library-app:
     build: .
     container_name: library-backend-app
@@ -32,16 +60,18 @@ services:
     depends_on:
       - mysqldb
       - redis
+      - kafka
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/libraryDb?useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     networks:
       - library-network
 
-# --- 3. PERSISTENT STORAGE AND ISOLATED NETWORK LOGIC ---
+# --- PERSISTENT STORAGE AND ISOLATED NETWORK LOGIC ---
 volumes:
   mysql_data:
 

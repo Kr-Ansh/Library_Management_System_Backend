@@ -3,8 +3,10 @@ package com.irons.library_management_system_backend.controller;
 import com.irons.library_management_system_backend.dto.BookRequestDTO;
 import com.irons.library_management_system_backend.dto.BookResponseDTO;
 import com.irons.library_management_system_backend.service.BooksService;
+import com.irons.library_management_system_backend.service.KafkaProducerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,9 @@ import java.util.List;
 public class BooksController {
 
     private final BooksService booksService;
+
+    @Autowired
+    private final KafkaProducerService kafkaProducerService;
 
     @GetMapping("/all")
     public ResponseEntity<List<BookResponseDTO>> getAllBooks() {
@@ -68,6 +73,10 @@ public class BooksController {
     @PatchMapping("/borrow")
     public ResponseEntity<String> borrowBook(@RequestParam Long bookId, @RequestParam Long userId) {
         booksService.borrowBook(bookId, userId);
+
+        String eventMessage = String.format("TRANSACTION_EVENT: User ID %d successfully borrowed Book ID %d", userId, bookId);
+        kafkaProducerService.publishEvent(eventMessage);
+
         return ResponseEntity.ok("Book with ID " + bookId + " was successfully issued to user ID " + userId + ".");
     }
 
