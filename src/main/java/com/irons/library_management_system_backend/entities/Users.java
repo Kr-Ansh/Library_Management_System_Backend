@@ -11,15 +11,24 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users_table")
+@Table(
+        name = "users_table",
+        indexes = {
+                @Index(name = "idx_user_name", columnList = "user_name")
+        }
+)
 public class Users {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
+    @Column(name = "user_name", nullable = false)
     private String userName;
-    private Boolean isUserAdmin;
+
+    @Column(name = "is_user_admin")
+    private Boolean isUserAdmin = false;
 
     @OneToMany(mappedBy = "borrowedBy", cascade = CascadeType.ALL)
     private List<Books> booksBorrowed = new ArrayList<>();

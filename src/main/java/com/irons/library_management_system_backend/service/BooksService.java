@@ -151,7 +151,7 @@ public class BooksService {
     @Transactional // ◄ Added to safely rollback if either save step encounters a system glitch
     public void borrowBook(Long bookId, Long userId) {
 
-        Books book = booksRepository.findById(bookId)
+        Books book = booksRepository.findByIdWithLock(bookId)
                 .orElseThrow(() -> new LibraryException("Book with id " + bookId + " does not exist in the Library."));
 
         Users user = usersRepository.findById(userId)
@@ -179,7 +179,7 @@ public class BooksService {
     @Transactional
     public void returnBook(Long bookId, Long userId) {
 
-        Books book = booksRepository.findById(bookId)
+        Books book = booksRepository.findByIdWithLock(bookId)
                 .orElseThrow(() -> new LibraryException("Book with id " + bookId + " does not exist in the Library."));
 
         Users user = usersRepository.findById(userId)
