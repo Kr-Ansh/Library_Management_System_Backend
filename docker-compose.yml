@@ -71,6 +71,20 @@ services:
     networks:
       - library-network
 
+# --- NOTIFICATION MICROSERVICE ---
+  notification-app:
+    build:
+      context: ../Notification-Service
+    container_name: library-notification-app
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    networks:
+      - library-network
+
 # --- PERSISTENT STORAGE AND ISOLATED NETWORK LOGIC ---
 volumes:
   mysql_data:

@@ -61,12 +61,20 @@ public class BooksController {
     @PostMapping("/add")
     public ResponseEntity<String> addBook(@Valid @RequestBody BookRequestDTO bookRequestDTO) {
         booksService.addBook(bookRequestDTO);
+
+        String eventMessage = String.format("BOOK_EVENT: New Book '%s' by %s added to inventory.", bookRequestDTO.getBookName(), bookRequestDTO.getBookAuthor());
+        kafkaProducerService.publishEvent(eventMessage);
+
         return new ResponseEntity<>("Book added to the library successfully.", HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> removeBook(@PathVariable Long id) {
         booksService.removeBook(id);
+
+        String eventMessage = String.format("BOOK_EVENT: Book with ID: " + id + " successfully removed from the library.");
+        kafkaProducerService.publishEvent(eventMessage);
+
         return ResponseEntity.ok("Book with ID " + id + " was successfully removed from the library inventory.");
     }
 
@@ -83,6 +91,10 @@ public class BooksController {
     @PatchMapping("/return")
     public ResponseEntity<String> returnBook(@RequestParam Long bookId, @RequestParam Long userId) {
         booksService.returnBook(bookId, userId);
+
+        String eventMessage = String.format("TRANSACTION_EVENT: Book with ID: " + bookId + " successfully returned by User ID " + userId);
+        kafkaProducerService.publishEvent(eventMessage);
+
         return ResponseEntity.ok("Book with ID " + bookId + " was successfully returned by user ID " + userId + ".");
     }
 }
