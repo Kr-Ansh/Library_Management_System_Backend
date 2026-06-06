@@ -1,146 +1,132 @@
-```markdown
-# Library Management System Backend
+# Library Management System Ecosystem
 
-A robust, enterprise-grade RESTful API engineered with Spring Boot, Java 21, and MySQL to manage a library ecosystem. This system orchestrates complex data flows, including real-time inventory tracking, bidirectional book-to-patron borrowing transactions, strict payload input validation, and centralized exception handling pipelines.
-
----
-
-## 🚀 Key Architectural Features
-
-* **Data Engineering & Layer Separation:** Completely decoupled architecture utilizing Entity-to-DTO conversion mapping layers (`BookMapper` and `UserMapper`) to guarantee structural payload safety and prevent infinite serialization loops.
-* **Transactional Operations:** Atomic patching mechanisms for issuing (`/borrow`) and processing (`/return`) book checkouts, ensuring zero data inconsistency or relationship corruption.
-* **Centralized Error Handling Advisor:** Integrated an application-wide `@RestControllerAdvice` interceptor to gracefully catch field validation exceptions (`MethodArgumentNotValidException`) and custom operational errors (`LibraryException`), converting them into clean JSON response contracts for clients.
-* **OpenAPI Integration:** Embedded live, interactive documentation utilizing Swagger UI (Springdoc) to allow instant testing and exploration of API boundaries out of the box.
-* **Comprehensive Test Coverage:** Backed by isolated Unit Testing configurations using JUnit 5 and Mockito to simulate service layer logic flows under both successful and volatile failure profiles.
+A distributed, enterprise-grade event-driven microservices ecosystem engineered with **Spring Boot**, **Java 21**, and **Gradle**. This system is completely containerized utilizing **Docker Compose** and orchestrates high-performance relational storage, isolated **Redis caching grids**, and asynchronous data pipelines powered by an **Apache Kafka** event streaming broker.
 
 ---
 
-## 🛠️ Tech Stack & Prerequisites
+## 🚀 Advanced Architectural Evolution
 
-* **Language:** Java 21 (Long-Term Support)
-* **Framework:** Spring Boot 3.x
-* **Data Access:** Spring Data JPA / Hibernate
-* **Database:** MySQL 8.x (In-Memory H2 configured for unit testing profiles)
-* **Build Tool:** Maven
-* **Documentation:** Swagger UI / OpenAPI 3
-* **Boilerplate Reduction:** Lombok
+* **Distributed Event-Driven Topologies:** Fully decoupled application architecture. Core actions inside the primary backend broadcast transactional data asynchronously across **Apache Kafka** event message streams.
+* **Independent Microservices:** Features a completely detached, lightweight `notification-service` running in its own runtime wrapper container. It monitors the network broker to catch and process live library audit events without blocking main API responses.
+* **High-Performance Caching Layer:** Features a standalone distributed **Redis cache instance** intercepting heavy read pipelines (such as filtered queries and inventory lookups) to slash database lookup overhead. Built with safe Java type serialization structures and precise **Dynamic SpEL `@Caching` eviction algorithms** to prevent stale state leaks.
+* **Containerized Infrastructure Abstraction:** Zero local machine installation dependencies. The entire network topology—including MySQL 8, Redis, Zookeeper, the Kafka Message Broker, and the Spring Boot application binaries—boots up uniformly using a single orchestration script.
+* **Transactional Reliability Guardrails:** Core business services execute mutating actions within atomic `@Transactional` boundary frames, ensuring zero state corruption, while event broadcasting operations are decoupled at the controller boundary to avoid dirty data pollution.
 
 ---
 
-## 📂 Project Architecture Layout
+## 🛠️ Multi-App Tech Stack
+
+* **Core Framework:** Spring Boot 3.x / Java 21 (LTS)
+* **Build Automation Engine:** Gradle (Groovy)
+* **Event Streaming & Message Broker:** Apache Kafka & Apache Zookeeper (Confluent Infrastructure Images)
+* **In-Memory Storage & Cache:** Redis 7.x (Lightweight Alpine Core)
+* **Primary Relational Database:** MySQL 8.x (Backed by dedicated Docker Named Volumes)
+* **Documentation Engine:** Swagger UI / OpenAPI 3
+
+---
+
+## 📂 System Architecture Layout
+
+The ecosystem is split into two isolated code repositories running side-by-side on a shared virtual network bridge:
 
 ```text
-src/main/java/com/irons/library_management_system_backend/
- ├── config/       # OpenAPI/Swagger Documentation Configurations
- ├── controller/   # REST Controllers exposing API gateways and routing definitions
- ├── dto/          # Request and Response Data Transfer Objects with validation constraints
- ├── entities/     # JPA Database Models mapped with bidirectional @OneToMany relationships
- ├── exception/    # Custom Business Exception wrappers and Centralized Global Error Handler
- ├── mapper/       # Custom mapping pipelines converting Entities safely into DTO definitions
- ├── repository/   # Database Access Abstraction Interfaces extending JpaRepository
- └── service/      # Business logic processing layer orchestrating system constraints
+📁 My-Backend-Workspace/
+   ├── 📁 library-management-system-backend/   # Primary Core Engine (Monolith Platform Core)
+   │     ├── 📄 docker-compose.yml              # Central Multi-Container Orchestrator
+   │     ├── 📄 Dockerfile                      # Compilation image layout for Core App
+   │     └── src/main/java/com/irons/...
+   │           ├── config/                      # Redis Caching & Kafka Topic Definitions
+   │           └── service/                     # Event Producers & Core Database Workflows
+   │
+   └── 📁 notification-service/                # Independent Secondary Microservice
+         ├── 📄 Dockerfile                      # Compilation image layout for Notification App
+         └── src/main/java/com/irons/...       # Dedicated Event Consumers & Listeners
 
 ```
 
 ---
 
-## 🚦 Getting Started
+## 🚦 Getting Started (Universal Docker Boot Sequence)
 
-### 1. Database Setup
+Thanks to Docker Compose, you do not need to manually configure schemas, local MySQL installations, or Redis servers.
 
-Log into your MySQL terminal or GUI manager and create a fresh database matching your application profile coordinates:
+### 1. Build Project Binaries
 
-```sql
-CREATE DATABASE librarydb;
-
-```
-
-### 2. Configure Environment Properties
-
-Navigate to `src/main/resources/application.properties` and synchronize your database connectivity profiles:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/librarydb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-spring.datasource.username=YOUR_MYSQL_USERNAME
-spring.datasource.password=YOUR_MYSQL_PASSWORD
-
-# Hibernate Lifecycle Strategy
-spring.jpa.hibernate.ddl-auto=update
-
-# Enable SQL Query Formatting inside Logging Terminal
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-
-```
-
-### 3. Build and Run the Application
-
-Compile the project, execute all internal verification unit tests, and boot up the server engine locally:
+Open separate terminals for both directories and execute the Gradle compilation wrappers to bake your localized `.jar` artifacts:
 
 ```bash
-mvn clean package
-mvn spring-boot:run
+# Inside library-management-system-backend/
+./gradlew clean build -x test
+
+# Inside notification-service/
+./gradlew clean build -x test
 
 ```
 
-The application will boot up on port `8080` by default.
+### 2. Boot Up the Distributed Topology
 
----
-
-## 📖 API Documentation & Testing
-
-Once the backend service instance is fully operational, you can explore, test, and trigger live data requests through the interactive Swagger UI panel:
-
-* **Swagger UI URL:** `http://localhost:8080/swagger-ui/index.html`
-
-### Endpoint Blueprint Summary
-
-#### 📚 Books Routing Matrix
-
-| Method | Endpoint | Description | Payload Constraints |
-| --- | --- | --- | --- |
-| **GET** | `/api/books/all` | Retrieves entire library catalog inventory | None |
-| **GET** | `/api/books/available` | Filter and discover books current marked available | None |
-| **GET** | `/api/books/unavailable` | Filter and track currently borrowed library inventory | None |
-| **GET** | `/api/books/id/{id}` | Look up explicit book properties by Database ID | Path Variable |
-| **GET** | `/api/books/name/{name}` | Search book record using matching textual string name | Path Variable |
-| **POST** | `/api/books/add` | Append new book payload to inventory registry | `@Valid BookRequestDTO` |
-| **DELETE** | `/api/books/{id}` | Purge book item completely from inventory rows | Path Variable |
-| **PATCH** | `/api/books/borrow` | Commit transaction to checkout book to specific patron | Query Params (`bookId`, `userId`) |
-| **PATCH** | `/api/books/return` | Release borrowing user link and set book to available | Query Params (`bookId`, `userId`) |
-
-#### 👥 Users Routing Matrix
-
-| Method | Endpoint | Description | Payload Constraints |
-| --- | --- | --- | --- |
-| **GET** | `/api/users/all` | Fetch catalog profiles of all registered users | None |
-| **GET** | `/api/users/id/{id}` | Locate specific member record by Database ID | Path Variable |
-| **GET** | `/api/users/name/{name}` | Search user entity using alphanumeric string key | Path Variable |
-| **GET** | `/api/users/books/{id}` | Fetch list tracking all active book elements held by user | Path Variable |
-| **GET** | `/api/users/admins` | Filter group containing only authorized administrative members | None |
-| **GET** | `/api/users/members` | Filter view extracting core non-administrative library patrons | None |
-| **POST** | `/api/users/add` | Registry gateway to introduce a new user profile payload | `@Valid UserRequestDTO` |
-| **DELETE** | `/api/users/{id}` | Remove user completely from application databases | Path Variable |
-| **PATCH** | `/api/users/{id}` | Escalate a normal member's security role group to Admin | Path Variable |
-
----
-
-## 🧪 Testing Profiles
-
-To isolate and secure data processing rules, all core service behaviors contain complete verification test workflows executing logic validations without spinning up a live MySQL engine instance.
-
-Run the automated validation test suites using the following Maven execution flag:
+Navigate to the root directory containing your primary project (`library-management-system-backend/`) where the global `docker-compose.yml` file sits, and spin up the multi-container grid:
 
 ```bash
-mvn test
+docker-compose up --build
 
 ```
+
+Docker will automatically pull down the official lightweight open-source images, construct an isolated virtual network bridge (`library-network`), link runtime variables, and boot all 5 major nodes side-by-side.
+
+---
+
+## 📖 API Boundaries & Real-Time Stream Verification
+
+Once the system output prints a successful startup validation signature, you can verify your infrastructure components:
+
+* **Interactive Swagger Gateway API:** `http://localhost:8080/swagger-ui/index.html`
+* **Core API Endpoint Port:** `8080` (Direct Access Container)
+* **Isolated Notification Microservice Port:** `8081` (Dedicated Consumer Container)
+
+### 🧪 Witnessing the Event Stream in Real-Time
+
+1. Open your terminal console running your active Docker container log views.
+2. Direct your browser to the Swagger UI page and fire an execution request against the `/api/books/borrow` endpoint.
+3. Observe your consolidated container log output streams. You will see the asynchronous data packet flow seamlessly cross process boundaries:
 
 ```text
-Results:
-Tests run: 32, Failures: 0, Errors: 0, Skipped: 0
-[INFO] BUILD SUCCESS
+library-backend-app  | INFO --- : 🚀 Broadcasting Event to Kafka Topic [library-transactions]: TRANSACTION_EVENT: User ID 1 successfully borrowed Book ID 5
+library-notification-app | INFO --- : 🔔 [NOTIFICATION SERVICE] Processing Live Event Alert: TRANSACTION_EVENT: User ID 1 successfully borrowed Book ID 5
+library-notification-app | INFO --- : 📩 Simulated Email/SMS notification sent successfully to the patron context.
 
 ```
+
+---
+
+## 📝 API Endpoint Blueprint Matrix
+
+### 📚 Books Routing Abstractions (`/api/books`)
+
+| Method | Endpoint | Description | Cache Layer Impact / Event Streams |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/all` | Retrieves complete library catalog inventory | Reads `allBooksCache` |
+| **GET** | `/available` | Filters and discovers books currently available to borrow | Reads `availableBooksCache` |
+| **GET** | `/unavailable` | Filters and tracks active book loans | Reads `unavailableBooksCache` |
+| **GET** | `/id/{id}` | Looks up specific book parameters by database primary key | Reads `bookDetailsCache` |
+| **GET** | `/name/{name}` | Searches for a book by its matching textual string name | Reads `bookDetailsByNameCache` |
+| **GET** | `/author/{author}` | Filters catalog list to fetch books by a specific writer | Reads `booksByAuthorCache` |
+| **GET** | `/genre/{genre}` | Isolates catalog elements by their structural category tags | Reads `booksByGenreCache` |
+| **POST** | `/add` | Appends a new book record payload into the system inventory | Evicts List Caches \| Streams `BOOK_EVENT` |
+| **DELETE** | `/{id}` | Purges a book element permanently from the application rows | Evicts All Book Caches \| Streams `BOOK_EVENT` |
+| **PATCH** | `/borrow` | Commits an atomic lease to issue a book to a library patron | Evicts State Caches \| Streams `TRANSACTION_EVENT` |
+| **PATCH** | `/return` | Releases an active book lease allocation back to open shelf | Evicts State Caches \| Streams `TRANSACTION_EVENT` |
+
+### 👥 Users Routing Abstractions (`/api/users`)
+
+| Method | Endpoint | Description | Cache Layer Impact / Event Streams |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/all` | Fetches profiling records of all registered system entities | Reads `allUsersCache` |
+| **GET** | `/id/{id}` | Locates explicit member metrics matching database primary key | Reads `userDetailsByIdCache` |
+| **GET** | `/name/{name}` | Inquires user profile records using alphanumeric string keys | Reads `userDetailsByNameCache` |
+| **GET** | `/books/{id}` | Extracts a tracked array mapping all active leases held by user | Reads `booksBorrowedByUserCache` |
+| **GET** | `/admins` | Filter view parsing users with full administrative access limits | Reads `usersByRoleCache` (true) |
+| **GET** | `/members` | Filter view parsing core standard library patrons | Reads `usersByRoleCache` (false) |
+| **POST** | `/add` | Registers a fresh user profile payload to database infrastructure | Evicts List Caches \| Streams `USER_EVENT` |
+| **DELETE** | `/{id}` | Wipes a specific user entirely out of the application databases | Evicts All User Caches \| Streams `USER_EVENT` |
+| **PATCH** | `/{id}` | Escalates standard patron access rights up to Admin security tier | Evicts Target Key & List Caches \| Streams `USER_EVENT` |
