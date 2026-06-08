@@ -1,6 +1,5 @@
 package com.irons.library_management_system_backend.repository;
 
-import com.irons.library_management_system_backend.dto.BookResponseDTO;
 import com.irons.library_management_system_backend.entities.Books;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
