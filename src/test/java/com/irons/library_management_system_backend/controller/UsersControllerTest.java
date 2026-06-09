@@ -3,16 +3,25 @@ package com.irons.library_management_system_backend.controller;
 import com.irons.library_management_system_backend.dto.BookResponseDTO;
 import com.irons.library_management_system_backend.dto.UserRequestDTO;
 import com.irons.library_management_system_backend.dto.UserResponseDTO;
+import com.irons.library_management_system_backend.exception.GlobalExceptionHandler;
 import com.irons.library_management_system_backend.exception.LibraryException;
+import com.irons.library_management_system_backend.security.JwtAuthenticationFilter;
+import com.irons.library_management_system_backend.security.JwtUtils;
+import com.irons.library_management_system_backend.service.KafkaProducerService;
 import com.irons.library_management_system_backend.service.UsersService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,20 +30,33 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UsersController.class)
+@ExtendWith(MockitoExtension.class)
 class UsersControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @Mock
     private UsersService usersService;
+
+    @Mock
+    private KafkaProducerService  kafkaProducerService;
+
+    @Mock
+    private GlobalExceptionHandler globalExceptionHandler;
+
+    @InjectMocks
+    private UsersController usersController;
 
     private UserResponseDTO sampleUserResponse;
     private BookResponseDTO sampleBookResponse;
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(usersController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
         sampleUserResponse = new UserResponseDTO();
         sampleUserResponse.setUserId(10L);
         sampleUserResponse.setUserName("TestUser");

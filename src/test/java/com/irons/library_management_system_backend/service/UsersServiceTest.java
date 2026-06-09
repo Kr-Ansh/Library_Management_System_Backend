@@ -86,7 +86,7 @@ class UsersServiceTest {
 
         LibraryException exception = assertThrows(LibraryException.class, () -> usersService.findAllUsers());
 
-        assertEquals("No user's data found in the system.", exception.getMessage());
+        assertEquals("No users data found in the system.", exception.getMessage());
         Mockito.verify(usersRepository, Mockito.times(1)).findAll();
     }
 

@@ -2,16 +2,26 @@ package com.irons.library_management_system_backend.controller;
 
 import com.irons.library_management_system_backend.dto.BookRequestDTO;
 import com.irons.library_management_system_backend.dto.BookResponseDTO;
+import com.irons.library_management_system_backend.exception.GlobalExceptionHandler;
 import com.irons.library_management_system_backend.exception.LibraryException;
+import com.irons.library_management_system_backend.security.JwtAuthenticationFilter;
+import com.irons.library_management_system_backend.security.JwtUtils;
 import com.irons.library_management_system_backend.service.BooksService;
+import com.irons.library_management_system_backend.service.KafkaProducerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
@@ -19,25 +29,48 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BooksController.class)
+@ExtendWith(MockitoExtension.class)
 class BooksControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @Mock
     private BooksService booksService;
+
+    @Mock
+    private KafkaProducerService kafkaProducerService;
+
+    @Mock
+    private GlobalExceptionHandler globalExceptionHandler;
+
+    @InjectMocks
+    private BooksController booksController;
 
     private BookResponseDTO sampleBookResponse;
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(booksController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
         sampleBookResponse = new BookResponseDTO();
         sampleBookResponse.setBookId(1L);
         sampleBookResponse.setBookName("Test Book");
         sampleBookResponse.setBookAuthor("Test Author");
         sampleBookResponse.setBookGenre("Test Genre");
         sampleBookResponse.setIsBookBorrowed(false);
+    }
+
+    @Test
+    void getBookByIdSuccess() throws Exception {
+        Mockito.when(booksService.findBookById(any(Long.class))).thenReturn(sampleBookResponse);
+
+        mockMvc.perform(get("/api/books/id/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookId").value(1))
+                .andExpect(jsonPath("$.bookName").value("Test Book"));
     }
 
     @Test
@@ -67,16 +100,6 @@ class BooksControllerTest {
         mockMvc.perform(get("/api/books/unavailable"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].isBookBorrowed").value(true));
-    }
-
-    @Test
-    void getBookByIdSuccess() throws Exception {
-        Mockito.when(booksService.findBookById(1L)).thenReturn(sampleBookResponse);
-
-        mockMvc.perform(get("/api/books/id/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.bookId").value(1))
-                .andExpect(jsonPath("$.bookName").value("Test Book"));
     }
 
     @Test

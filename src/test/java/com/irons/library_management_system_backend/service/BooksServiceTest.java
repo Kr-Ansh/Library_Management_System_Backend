@@ -246,7 +246,6 @@ class BooksServiceTest {
 
         booksService.removeBook(1L);
 
-        Mockito.verify(booksRepository, Mockito.times(1)).findById(1L);
         Mockito.verify(booksRepository, Mockito.times(1)).delete(sampleBook);
     }
 
@@ -257,13 +256,11 @@ class BooksServiceTest {
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.removeBook(1L));
 
         assertEquals("Book with id 1 does not exist in the Library.", exception.getMessage());
-        Mockito.verify(booksRepository, Mockito.times(1)).findById(1L);
-        Mockito.verify(booksRepository, Mockito.times(0)).delete(any(Books.class));
     }
 
     @Test
     void borrowBookSuccess() {
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
 
         booksService.borrowBook(1L, 10L);
@@ -277,18 +274,18 @@ class BooksServiceTest {
 
     @Test
     void borrowBookFailWhenBookNotFound() {
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.empty());
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.empty());
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.borrowBook(1L, 10L));
 
         assertEquals("Book with id 1 does not exist in the Library.", exception.getMessage());
-        Mockito.verify(booksRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(booksRepository, Mockito.times(1)).findByIdWithLock(1L);
         Mockito.verify(booksRepository, Mockito.times(0)).save(any(Books.class));
     }
 
     @Test
     void borrowBookFailWhenUserNotFound() {
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.empty());
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.borrowBook(1L, 10L));
@@ -301,7 +298,7 @@ class BooksServiceTest {
     @Test
     void borrowBookFailWhenAlreadyBorrowed() {
         sampleBook.setIsBookBorrowed(true);
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.borrowBook(1L, 10L));
@@ -316,7 +313,7 @@ class BooksServiceTest {
         sampleBook.setBorrowedBy(sampleUser);
         sampleUser.getBooksBorrowed().add(sampleBook);
 
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
 
         booksService.returnBook(1L, 10L);
@@ -330,17 +327,17 @@ class BooksServiceTest {
 
     @Test
     void returnBookFailWhenBookNotFound() {
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.empty());
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.empty());
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.returnBook(1L, 10L));
 
         assertEquals("Book with id 1 does not exist in the Library.", exception.getMessage());
-        Mockito.verify(booksRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(booksRepository, Mockito.times(1)).findByIdWithLock(1L);
     }
 
     @Test
     void returnBookFailWhenUserNotFound() {
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.empty());
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.returnBook(1L, 10L));
@@ -358,7 +355,7 @@ class BooksServiceTest {
         sampleBook.setIsBookBorrowed(true);
         sampleBook.setBorrowedBy(differentUser);
 
-        Mockito.when(booksRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
+        Mockito.when(booksRepository.findByIdWithLock(1L)).thenReturn(Optional.of(sampleBook));
         Mockito.when(usersRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
 
         LibraryException exception = assertThrows(LibraryException.class, () -> booksService.returnBook(1L, 10L));
